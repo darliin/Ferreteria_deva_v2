@@ -112,34 +112,55 @@ export const getProductsByCategory = async (req, res) => {
 };
 
 export const createProduct = async (req, res) => {
-    try {
-        const { name, description, price, category, brand, stock, Images } = req.body;
+  try {
+    const {
+      name,
+      description,
+      price,
+      category,
+      brand,
+      stock,
+      Images
+    } = req.body;
 
-        // Validate required fields
-        if (!name || !description || !price || !category || !brand || !stock || Images) {
-            return res.status(400).json({ message: "All fields are required" });
-        }
-
-        // Create a new product
-        const newProduct = new productModels({
-            name,
-            description,
-            price,
-            category,
-            brand,
-            stock,
-            Images,
-            isActive: true // Assuming the product is active by default
-        });
-
-        // Save the product to the database
-        await newProduct.save();
-
-        return res.status(201).json({ message: "Product created successfully", product: newProduct });
-    } catch (error) {
-        return res.status(500).json({
-            message: "Error creating product",
-            error: error.message
-        });
+    // Validaciones
+    if (
+      !name ||
+      !description ||
+      price === undefined ||
+      !category ||
+      !brand ||
+      stock === undefined ||
+      !Images
+    ) {
+      return res.status(400).json({
+        message: "All fields are required"
+      });
     }
+
+    // Crear producto
+    const newProduct = new Product({
+      name,
+      description,
+      price,
+      category,
+      brand,
+      stock,
+      Images,
+      isActive: true
+    });
+
+    await newProduct.save();
+
+    return res.status(201).json({
+      message: "Product created successfully",
+      product: newProduct
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error creating product"
+    });
+  }
 };
