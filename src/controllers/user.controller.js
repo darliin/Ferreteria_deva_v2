@@ -1,41 +1,36 @@
 import User from "../models/user.models.js";
 import bcrypt from "bcryptjs";
-
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+dotenv.config();
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // 1️⃣ Buscar usuario
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // 2️⃣ Comparar password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // 3️⃣ Generar token
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
     res.json({
       message: "Login successful",
-      token
+      token,
     });
-
   } catch (err) {
     res.status(500).json({ message: "Server error" });
+    console.log(err);
   }
 };
-
-
 
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -54,7 +49,9 @@ export const register = async (req, res) => {
 
     // 3️⃣ Validar password
     if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters" });
     }
 
     // 4️⃣ Verificar si existe
@@ -71,7 +68,7 @@ export const register = async (req, res) => {
     const newUser = await User.create({
       name,
       email,
-      password: hashedPassword
+      password: hashedPassword,
     });
 
     // 7️⃣ Respuesta (SIN password)
@@ -80,10 +77,9 @@ export const register = async (req, res) => {
       user: {
         id: newUser._id,
         name: newUser.name,
-        email: newUser.email
-      }
+        email: newUser.email,
+      },
     });
-
   } catch (err) {
     res.status(500).json({ message: "Server error" });
     console.log(err);
