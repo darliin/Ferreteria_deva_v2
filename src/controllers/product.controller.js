@@ -1,145 +1,175 @@
 import mongoose from "mongoose";
-import productModels from "../models/product.models.js";
+import Product from "../models/product.models.js";
+import Category from "../models/category.models.js";
+import Brand from "../models/brand.models.js";
+import Supplier from "../models/supplier.models.js";
+import Unit from "../models/unit.models.js";
 
-export const getProducts = async (req, res) => {
-    try {
-        const products = await productModels.find();
-        if (!products) {
-            return res.status(404).json({ message: "No products found" });
-        }
-        res.status(200).json(products);
-        console.log("Products retrieved successfully");
-    } catch (error) {
-        console.error("Error retrieving products:", error);
-    }
+export const getAllProducts = async (req, res) => {
+  try {
+    const products = await Product.find({ isActive: true })
+      .populate("category", "name")
+      .populate("brand", "name")
+      .populate("supplier", "name")
+      .populate("unit", "name shortName");
+
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ message: "Error obteniendo productos" });
+  }
 };
 
-export const GetByIdProduct = async (req, res) => {
-try {
+export const getProductById = async (req, res) => {
+  try {
     const { id } = req.params;
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ message: "Invalid product ID" });
-    }
-    const product = await productModels.findById(id);
-    if (!product) {
-    return res.status(404).json({ message: "Product not found" });
+      return res.status(400).json({ message: "ID inválido" });
     }
 
-    return res.status(200).json(product);
-
-} catch (error) {
-
-    return res.status(500).json({
-    message: "Error retrieving product",
-    error: error.message
-    });
-}
-};
-
-export const UpdateProduct = async (req, res) => {
-try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ message: "Invalid product ID" });
-    }
-    const product = await productModels.findByIdAndUpdate(
-    id, req.body,
-    {
-        new: true,          
-        runValidators: true 
-    }
+    const product = await Product.findById(id).populate(
+      "category brand supplier unit"
     );
-    if (!product) {
-    return res.status(404).json({ message: "Product not found" });
+
+    if (!product || !product.isActive) {
+      return res.status(404).json({ message: "Producto no encontrado" });
     }
-    return res.status(200).json(product);
-} catch (error) {
-    return res.status(500).json({
-    message: "Error updating product",
-    error: error.message
-    });
-}
-};
 
-export const deleteProduct = async (req, res) => {
-try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ message: "Invalid product ID" });
-    }
-    const product = await productModels.findByIdAndDelete(id);
-    if (!product) {
-    return res.status(404).json({ message: "Product not found" });
-    }
-    return res.status(200).json({ message: "Product deleted successfully" });
-
-} catch (error) {
-    return res.status(500).json({
-    message: "Error deleting product",
-    error: error.message
-    });
-}
-};
-
-export const getProductsByCategory = async (req, res) => {
-    try {
-        const { categoryId } = req.params;
-
-        // Validar ObjectId
-        if (!mongoose.Types.ObjectId.isValid(categoryId)) {
-            return res.status(400).json({ message: "Invalid category ID" });
-        }
-
-        const products = await productModels.find({ 
-            category: categoryId,
-            isActive: true
-        })
-        .populate("category")
-        .populate("brand");
-
-        if (products.length === 0) {
-            return res.status(404).json({ message: "No products found in this category" });
-        }
-
-        res.status(200).json(products);
-
-    } catch (error) {
-        res.status(500).json({
-            message: "Error retrieving products by category",
-            error: error.message
-        });
-    }
+    res.status(200).json(product);
+  } catch (error) {
+    res.status(500).json({ message: "Error obteniendo producto" });
+  }
 };
 
 export const createProduct = async (req, res) => {
-    try {
-        const { name, description, price, category, brand, stock, Images } = req.body;
+  try {
+    const {
+      name,
+      code,
+      description,
+      price,
+      costPrice,
+      unit,
+      category,
+      brand,
+      supplier,
+      stock,
+      minStock,
+      images,
+    } = req.body;
 
-        // Validate required fields
-        if (!name || !description || !price || !category || !brand || !stock || Images) {
-            return res.status(400).json({ message: "All fields are required" });
-        }
-
-        // Create a new product
-        const newProduct = new productModels({
-            name,
-            description,
-            price,
-            category,
-            brand,
-            stock,
-            Images,
-            isActive: true // Assuming the product is active by default
-        });
-
-        // Save the product to the database
-        await newProduct.save();
-
-        return res.status(201).json({ message: "Product created successfully", product: newProduct });
-    } catch (error) {
-        return res.status(500).json({
-            message: "Error creating product",
-            error: error.message
-        });
+    if (
+      !name ||
+      !code ||
+      !description ||
+      !price ||
+      !costPrice ||
+      !unit ||
+      !category ||
+      !brand ||
+      !supplier ||
+      stock === undefined
+    ) {
+      return res.status(400).json({ message: "Campos obligatorios faltantes" });
     }
+
+    if (price <= costPrice) {
+      return res.status(400).json({
+        message: "El precio de venta debe ser mayor al precio de compra",
+      });
+    }
+
+    const existCode = await Product.findOne({ code });
+    if (existCode) {
+      return res
+        .status(409)
+        .json({ message: "El código del producto ya existe" });
+    }
+
+    const [cat, br, sup, un] = await Promise.all([
+      Category.findById(category),
+      Brand.findById(brand),
+      Supplier.findById(supplier),
+      Unit.findById(unit),
+    ]);
+
+    if (!cat || !cat.isActive)
+      return res.status(400).json({ message: "Categoría inválida" });
+    if (!br) return res.status(400).json({ message: "Marca inválida" });
+    if (!sup) return res.status(400).json({ message: "Proveedor inválido" });
+    if (!un || !un.isActive)
+      return res.status(400).json({ message: "Unidad inválida" });
+
+    const newProduct = new Product({
+      name,
+      code,
+      description,
+      price,
+      costPrice,
+      unit,
+      category,
+      brand,
+      supplier,
+      stock,
+      minStock,
+      images,
+    });
+
+    await newProduct.save();
+
+    res.status(201).json(newProduct);
+  } catch (error) {
+    res.status(500).json({ message: "Error creando producto" });
+  }
+};
+
+export const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID inválido" });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    if (data.price && data.costPrice && data.price <= data.costPrice) {
+      return res.status(400).json({
+        message: "El precio de venta debe ser mayor al precio de compra",
+      });
+    }
+
+    Object.assign(product, data);
+    await product.save();
+
+    res.status(200).json(product);
+  } catch (error) {
+    res.status(500).json({ message: "Error actualizando producto" });
+  }
+};
+
+export const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID inválido" });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    product.isActive = false;
+    await product.save();
+
+    res.status(200).json({ message: "Producto desactivado correctamente" });
+  } catch (error) {
+    res.status(500).json({ message: "Error eliminando producto" });
+  }
 };

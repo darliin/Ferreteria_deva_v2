@@ -1,17 +1,16 @@
 import mongoose from "mongoose";
 
-const categorySchema = new mongoose.Schema(
+const unitSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
-      unique: true,
-      trim: true,
     },
-    description: {
+    shortName: {
       type: String,
       required: true,
     },
+    description: String,
     isActive: {
       type: Boolean,
       default: true,
@@ -20,4 +19,4 @@ const categorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Category", categorySchema);
+export default mongoose.model("Unit", unitSchema);

@@ -1,26 +1,25 @@
 import jwt from "jsonwebtoken";
 
-const auth = (req, res, next) => {
-const authHeader = req.headers.authorization;
+const Authentication = (req, res, next) => {
+  const authHeader = req.headers.authorization;
 
-if (!authHeader) {
+  if (!authHeader) {
     return res.status(401).json({ message: "No token provided" });
-}
+  }
 
-  // formato: Bearer TOKEN
-const token = authHeader.split(" ")[1];
+  const token = authHeader.split(" ")[1];
 
-try {
+  try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     req.user = {
-    id: decoded.id
+      id: decoded.id,
     };
 
     next();
-} catch (error) {
+  } catch (error) {
     return res.status(401).json({ message: "Invalid token" });
-}
+  }
 };
 
-export default auth;
+export default Authentication;

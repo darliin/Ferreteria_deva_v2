@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import connectDB from "./src/config/db.js";
 import userRouter from "./src/routers/user.route.js";
 import productRouter from "./src/routers/product.route.js";
+import CategoriesRouter from "./src/routers/categories.routes.js";
 dotenv.config();
 
 const app = express();
@@ -14,8 +15,9 @@ app.use(express.json());
 
 connectDB();
 
-app.use("/api", userRouter);
-app.use("/api", productRouter);
+app.use("/api/users", userRouter);
+app.use("/api/categories", CategoriesRouter);
+app.use("/api/products", productRouter);
 
 app.get("/", (req, res) => {
   res.send("API running...");
