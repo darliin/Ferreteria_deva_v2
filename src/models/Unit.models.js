@@ -5,12 +5,26 @@ const unitSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      unique: true,
+      trim: true,
     },
+
     shortName: {
       type: String,
       required: true,
+      trim: true,
     },
-    description: String,
+
+    description: {
+      type: String,
+    },
+
+    type: {
+      type: String,
+      enum: ["cantidad", "peso", "volumen", "longitud"],
+      required: true,
+    },
+
     isActive: {
       type: Boolean,
       default: true,
