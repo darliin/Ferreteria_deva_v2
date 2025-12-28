@@ -1,4 +1,5 @@
 import categoryModels from "../models/category.models.js";
+import mongoose from "mongoose";
 
 export const getByIdCategories = async (req, res) => {
   try {
@@ -17,6 +18,7 @@ export const getByIdCategories = async (req, res) => {
     res.status(200).json(category);
   } catch (error) {
     res.status(500).json({ message: "Error obteniendo categoría" });
+    console.log(error);
   }
 };
 
@@ -53,7 +55,7 @@ export const createCategory = async (req, res) => {
   }
 };
 
-export const deleteCategory = async (req, res) => {
+export const disableCategory = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -98,5 +100,25 @@ export const updateCategory = async (req, res) => {
     res.status(200).json(category);
   } catch (error) {
     res.status(500).json({ message: "Error actualizando categoría" });
+  }
+};
+
+export const deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID inválido" });
+    }
+
+    const category = await categoryModels.findById(id);
+    if (!category) {
+      return res.status(404).json({ message: "Categoría no encontrada" });
+    }
+
+    await categoryModels.findByIdAndDelete(id);
+    res.status(200).json({ message: "Categoría eliminada correctamente" });
+  } catch (error) {
+    res.status(500).json({ message: "Error eliminando categoría" });
   }
 };

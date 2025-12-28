@@ -6,6 +6,7 @@ import userRouter from "./src/routes/users.route.js";
 import productRouter from "./src/routes/products.route.js";
 import CategoriesRouter from "./src/routes/categories.route.js";
 import UnitsRouter from "./src/routes/units.route.js";
+import brandsRouter from "./src/routes/brands.route.js";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use("/api/users", userRouter);
 app.use("/api/categories", CategoriesRouter);
 app.use("/api/units", UnitsRouter);
 app.use("/api/products", productRouter);
+app.use("/api/brands", brandsRouter);
 
 app.get("/", (req, res) => {
   res.send("API running...");

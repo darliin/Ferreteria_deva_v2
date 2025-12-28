@@ -1,18 +1,24 @@
 import mongoose from "mongoose";
 
-const brandSchema = new mongoose.Schema({
+const brandSchema = new mongoose.Schema(
+  {
     name: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
     },
-    description: {
-        type: String,
-        required: true
+
+    imageUrl: {
+      type: String,
     },
+
     isActive: {
-        type: Boolean,
-        default: true
-    }
-});
+      type: Boolean,
+      default: true,
+    },
+  },
+  { timestamps: true }
+);
 
 export default mongoose.model("Brand", brandSchema);
